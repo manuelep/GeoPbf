@@ -20,7 +20,8 @@ DB_MIGRATE = True
 UPLOAD_FOLDER = os.path.join(APP_FOLDER, "uploads")
 STATIC_UPLOAD_FOLDER = os.path.join(APP_FOLDER, "static", "uploads")
 
-CACHE = float('Inf')
+# Default value for cache expiration threashold
+CACHE_EXPIRE = float('Inf')
 
 # try import private settings
 try:

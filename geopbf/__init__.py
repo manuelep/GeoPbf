@@ -5,8 +5,10 @@ from py4web import request, response
 from mapbox_vector_tile import encode as mvt_encode
 import datetime
 
-from .geom import geom2tile
+from kilimanjaro.frameworks.py4web.controller import WebWrapper
 
+from .geom import geom2tile
+from .hashit import hashit
 
 class FeatToFeat(object):
     """ """
@@ -32,38 +34,51 @@ class FeatToFeat(object):
             features = list(map(lambda feat: self(**feat), features))
         )
 
-
-def prototize(func):
-    """
-    Warning: func must return a dictionary with at least a 'features' key.
-    """
-    def wrapper(x, y, z, **kwargs):
-        """ """
+def f2f(func):
+    def wrapper(x, y, z, *args, **kwargs):
         feat2feat = FeatToFeat(x, y, z)
-        return mvt_encode(feat2feat.loop(**func(x, y, z, **kwargs)))
-
+        return feat2feat.loop(**func(x, y, z, *args, **kwargs))
     return wrapper
 
 
-class Protobuf(Fixture):
-    """docstring for ."""
+class Prototizer(WebWrapper):
+    """docstring for Prototizer."""
+
+    EXT = '.pbf'
+
+    def _hash(self, func, *args, **kwargs):
+        return "{}.{}".format(*map(hashit, [
+            (func.__module__, func.__name__,)+args,
+            dict(kwargs, **self.params)
+        ]))
+
+    def on_request(self):
+        """ called when a request arrives """
+        self.out_encoded = True
+        ver = '__version'
+        if ver in request.query:
+            self.params = {ver: request.query.pop(ver)}
+        else:
+            self.params = {}
+        # self.now = now()
+        # self.public = (db.fcache.file.uploadfolder == settings.STATIC_UPLOAD_FOLDER)
 
     def on_success(self, status):
-
+        """ """
         response.headers["Content-Type"]="application/x-protobuf"
+        response.headers["Content-Disposition"] = f'inline; filename="{self.filename}"'
 
-        time_expire=3600
-        cache_control = f'max-age={time_expire}, s-maxage={time_expire}'
-
-        cache_control += ', public'
-
-        expires = (datetime.datetime.utcnow() + datetime.timedelta(seconds=time_expire)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-        headers = {
-            'Pragma': None,
-            'Expires': expires,
-            'Cache-Control': cache_control
-        }
-        response.headers.update(headers)
+    def __call__(self, func):
+        """
+        func @callable : A function that returns a dictionary with a mandatory 'features' key
+            and an optional 'name' key
+        Returns a wrapper function, it's intended as a decorator.
+        """
+        kwargs = self.parse_request(func)
+        name = self._hash(func, **kwargs)
+        self.filename = f"{name}{self.EXT}"
+        wrapper = lambda : mvt_encode(WebWrapper.__call__(self, f2f(func))())
+        return wrapper
 
     # def transform(self, output, shared_data=None):
     #     """ """
