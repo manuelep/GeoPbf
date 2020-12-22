@@ -49,35 +49,31 @@ class Prototizer(WebWrapper):
     def _hash(self, func, *args, **kwargs):
         return "{}.{}".format(*map(hashit, [
             (func.__module__, func.__name__,)+args,
-            dict(kwargs, **self.params)
+            kwargs
         ]))
 
-    def on_request(self):
-        """ called when a request arrives """
-        self.out_encoded = True
-        ver = '__version'
-        if ver in request.query:
-            self.params = {ver: request.query.pop(ver)}
-        else:
-            self.params = {}
-        # self.now = now()
-        # self.public = (db.fcache.file.uploadfolder == settings.STATIC_UPLOAD_FOLDER)
+    # def on_request(self):
+    #     """ called when a request arrives """
+    #
+    #     self.params = {}
+    #     # self.now = now()
+    #     # self.public = (db.fcache.file.uploadfolder == settings.STATIC_UPLOAD_FOLDER)
 
     def on_success(self, status):
         """ """
         response.headers["Content-Type"]="application/x-protobuf"
         response.headers["Content-Disposition"] = f'inline; filename="{self.filename}"'
 
-    def __call__(self, func):
+    def __call__(self, func, **defaults):
         """
         func @callable : A function that returns a dictionary with a mandatory 'features' key
             and an optional 'name' key
         Returns a wrapper function, it's intended as a decorator.
         """
-        kwargs = self.parse_request(func)
+        kwargs = self.parse_request(func, **defaults)
         name = self._hash(func, **kwargs)
         self.filename = f"{name}{self.EXT}"
-        wrapper = lambda : mvt_encode(WebWrapper.__call__(self, f2f(func))())
+        wrapper = lambda : mvt_encode(WebWrapper.__call__(self, f2f(func), **defaults)())
         return wrapper
 
     # def transform(self, output, shared_data=None):

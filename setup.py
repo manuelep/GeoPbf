@@ -28,7 +28,7 @@ setup(
         "shapely",
         "mercantile",
         "pyproj",
-        # "py4web",
+        "py4web",
         "mapbox_vector_tile"
     ]
 )

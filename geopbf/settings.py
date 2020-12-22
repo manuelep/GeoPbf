@@ -20,8 +20,17 @@ DB_MIGRATE = True
 UPLOAD_FOLDER = os.path.join(APP_FOLDER, "uploads")
 STATIC_UPLOAD_FOLDER = os.path.join(APP_FOLDER, "static", "uploads")
 
+# logger settings
+LOGGERS = [
+    "info:stdout"
+]  # syntax "severity:filename" filename can be stderr or stdout
+
 # Default value for cache expiration threashold
 CACHE_EXPIRE = float('Inf')
+
+CACHE_NEW = False
+
+CACHE_ON_CLIENT = False
 
 # try import private settings
 try:
