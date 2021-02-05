@@ -72,7 +72,6 @@ class Prototizerpp(Prototizer):
             self.filename = f"{name}{self.EXT}"
             rec = db.fcache(name=name)
             commit = False
-
             if rec is None:
                 stream = get_stream()
 
@@ -100,9 +99,9 @@ class Prototizerpp(Prototizer):
 
             self.time_expire = (rec.timeout or settings.CACHE_EXPIRE)-(self.now - rec.modified_on).seconds
 
+            if commit: db.commit()
             if self.public and not stream_public:
                 _, path_to_img = db.fcache.file.retrieve(rec.file, nameonly=True)
-                if commit: db.commit()
                 redirect(path_to_img[path_to_img.index('/'):])
             else:
                 _, stream = db.fcache.file.retrieve(rec.file, nameonly=False)
